@@ -1,23 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Box, Users, Lightbulb, Monitor, Megaphone, Target, Heart, Globe, Award, Flag, Ruler, PenTool, ArrowRight } from 'lucide-react';
-
-// --- DATA SOURCE ---
-export const historyData = [
-  { year: "2017", title: "Establishment", desc: "Founded Pro-Hub. Executed Beta Dan Phuong project." },
-  { year: "2018", title: "Expansion", desc: "Constructed Beta Cinema chain nationwide." },
-  { year: "2019", title: "Luxury Retail & Partnerships", desc: "Porsche Showroom at Vincom Metropolis. Appointed by DAT (IPP Group) for Vietnam's Delight store at Trang Tien Plaza (TTP)." },
-  { year: "2020", title: "Retail Chain", desc: "Executed Eurotiles Showroom chain." },
-  { year: "2021", title: "Adaptation", desc: "Social distancing adaptation: Aqua Online Dealer Conference. JLR Pop Up store at TTP." },
-  { year: "2022", title: "Global Standards", desc: "Design Land Rover 3S Pilot Showroom. Officially became a vendor for Diageo Vietnam." },
-  { year: "2023", title: "Realization", desc: "Construction of Land Rover 3S Pilot Showroom." },
-  { year: "2024", title: "Nationwide Rollout", desc: "Executed outlet contracts for Diageo Vietnam nationwide." },
-  { year: "2025", title: "Market Expansion", desc: "Design Land Rover 3S Showroom HCM. Expanding Southern market presence." },
-  { year: "2026", title: "Future Vision", desc: "Developing human resources to meet international standards for the Northern market." }
-];
+import { useHistory } from '../hooks/useHistory';
+import { useAboutImages } from '../hooks/useAboutImages';
+import { useTrustedPartners } from '../hooks/useTrustedPartners';
 
 // --- ABOUT CONTENT COMPONENT ---
 export default function AboutContent({ showWhoWeAre = true, scrollToId = 'history' }) {
+  const { history, loading } = useHistory();
+  const { aboutImages, loading: imagesLoading } = useAboutImages();
+  const { partners: trustedPartners, loading: partnersLoading } = useTrustedPartners();
   return (
     <>
       {/* --- WHO WE ARE SECTION --- */}
@@ -75,7 +67,13 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
             <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-0 bottom-0 w-[2px] bg-gray-200"></div>
 
             <div className="space-y-12 md:space-y-0">
-              {historyData.map((item, index) => (
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                  <p className="text-gray-500">Đang tải...</p>
+                </div>
+              ) : (
+                history.map((item, index) => (
                 <motion.div 
                   key={index}
                   initial={{ opacity: 0, y: 50 }}
@@ -105,7 +103,8 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
                   {/* Empty Side for Balance */}
                   <div className="md:w-5/12"></div>
                 </motion.div>
-              ))}
+                ))
+              )}
               
               {/* Future Node with Animated Effect */}
               <motion.div 
@@ -251,6 +250,70 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
               </p>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* --- OUR CLIENTS --- */}
+      <section className="py-20 px-6 md:px-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-sm font-medium text-gray-500 mb-2">TRUSTED BY INDUSTRY LEADERS</p>
+            <h3 className="text-5xl md:text-6xl font-bold uppercase tracking-tight mb-4">OUR CLIENTS</h3>
+            <div className="w-20 h-1 bg-black mx-auto"></div>
+          </div>
+
+          {partnersLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+              <p className="text-gray-500">Đang tải...</p>
+            </div>
+          ) : trustedPartners.length > 0 ? (
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-8 md:gap-12 mb-16">
+              {trustedPartners.map((partner, index) => (
+                <motion.div
+                  key={partner.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  className="flex items-center justify-center h-16 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+                >
+                  {partner.logo_url ? (
+                    <img 
+                      src={partner.logo_url} 
+                      alt={partner.name} 
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-gray-400 font-medium text-sm">{partner.name}</span>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-400">
+              <p>Chưa có Trusted Partners</p>
+              <p className="text-sm mt-2">Vui lòng thêm trong Admin → Trusted Partners</p>
+            </div>
+          )}
+
+          {/* Hình ảnh từ Admin */}
+          {aboutImages.image_url && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mt-16 w-full"
+            >
+              <img 
+                src={aboutImages.image_url} 
+                alt={aboutImages.title || 'Our Clients'} 
+                className="w-full h-auto object-contain rounded-lg"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </motion.div>
+          )}
         </div>
       </section>
     </>

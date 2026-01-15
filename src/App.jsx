@@ -5,6 +5,10 @@ import About from './About.jsx'
 import Contact from './Contact.jsx'
 import Projects from './Projects.jsx'
 import PageTransition from './components/PageTransition.jsx'
+import TestSupabase from './components/TestSupabase.jsx'
+import AdminLogin from './pages/AdminLogin.jsx'
+import AdminDashboard from './pages/AdminDashboard.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 function AppRoutes() {
   const location = useLocation();
@@ -42,6 +46,19 @@ function AppRoutes() {
             <PageTransition>
               <Contact />
             </PageTransition>
+          } 
+        />
+        <Route 
+          path="/test-supabase" 
+          element={<TestSupabase />} 
+        />
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
           } 
         />
       </Routes>

@@ -3,6 +3,8 @@ import { motion, useScroll, useSpring } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Download, Menu, X } from 'lucide-react';
 import AboutContent from './components/AboutContent';
+import { useDownloadProfiles } from './hooks/useDownloadProfiles';
+import { useContactInfo } from './hooks/useContactInfo';
 
 // --- COMPONENTS ---
 
@@ -13,6 +15,8 @@ const ScrollProgress = () => {
 };
 
 export default function About() {
+  const { profiles } = useDownloadProfiles();
+  const { contactInfo } = useContactInfo();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -162,16 +166,34 @@ export default function About() {
           <div className="flex flex-col md:flex-row gap-6 text-center md:text-right items-center">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Contact</p>
-              <a href="mailto:vannhi@pro-hub.com.vn" className="block text-sm font-bold hover:text-blue-600 transition-colors">vannhi@pro-hub.com.vn</a>
-              <a href="tel:+84908583042" className="block text-sm font-bold hover:text-blue-600 transition-colors mt-1">(+84) 908 583 042</a>
+              {contactInfo.email ? (
+                <a href={`mailto:${contactInfo.email}`} className="block text-sm font-bold hover:text-blue-600 transition-colors">{contactInfo.email}</a>
+              ) : (
+                <p className="text-gray-400 text-sm">Đang tải...</p>
+              )}
+              {contactInfo.hotline ? (
+                <a href={`tel:${contactInfo.hotline.replace(/\s/g, '')}`} className="block text-sm font-bold hover:text-blue-600 transition-colors mt-1">{contactInfo.hotline}</a>
+              ) : null}
             </div>
             <div className="flex gap-4">
-              <a href="#" className="px-4 py-2 border border-gray-200 rounded-full text-xs font-bold uppercase hover:bg-black hover:text-white transition-colors flex items-center gap-2">
-                <Download size={14} /> Profile EN
-              </a>
-              <a href="#" className="px-4 py-2 border border-gray-200 rounded-full text-xs font-bold uppercase hover:bg-black hover:text-white transition-colors flex items-center gap-2">
-                <Download size={14} /> Profile VN
-              </a>
+              {profiles.en ? (
+                <a 
+                  href={profiles.en.file_url} 
+                  download={profiles.en.file_name || 'profile-en.pdf'}
+                  className="px-4 py-2 border border-gray-200 rounded-full text-xs font-bold uppercase hover:bg-black hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Download size={14} /> Profile EN
+                </a>
+              ) : null}
+              {profiles.vn ? (
+                <a 
+                  href={profiles.vn.file_url} 
+                  download={profiles.vn.file_name || 'profile-vn.pdf'}
+                  className="px-4 py-2 border border-gray-200 rounded-full text-xs font-bold uppercase hover:bg-black hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Download size={14} /> Profile VN
+                </a>
+              ) : null}
             </div>
           </div>
         </div>

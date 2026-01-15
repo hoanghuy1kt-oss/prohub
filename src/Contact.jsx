@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Menu, X, ArrowUpRight, Check } from 'lucide-react';
+import { useContactInfo } from './hooks/useContactInfo';
 
 const Reveal = ({ children, delay = 0 }) => (
   <div className="overflow-hidden">
@@ -16,6 +17,7 @@ const Reveal = ({ children, delay = 0 }) => (
 );
 
 export default function Contact() {
+  const { contactInfo, loading: contactLoading } = useContactInfo();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copied, setCopied] = useState({ email: false, phone: false });
   const [showToast, setShowToast] = useState(false);
@@ -189,32 +191,40 @@ export default function Contact() {
                      
                      <div className="mb-8 group">
                         <label className="text-sm font-bold block mb-1">Email</label>
-                        <button
-                           onClick={() => copyToClipboard('vannhi@pro-hub.com.vn', 'email')}
-                           className="text-xl md:text-2xl font-bold flex items-center gap-2 hover:text-orange-600 transition-colors cursor-pointer"
-                        >
-                           vannhi@pro-hub.com.vn 
-                           {copied.email ? (
-                              <Check className="text-green-600" size={20} />
-                           ) : (
-                              <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
-                           )}
-                        </button>
+                        {contactInfo.email ? (
+                          <button
+                             onClick={() => copyToClipboard(contactInfo.email, 'email')}
+                             className="text-xl md:text-2xl font-bold flex items-center gap-2 hover:text-orange-600 transition-colors cursor-pointer"
+                          >
+                             {contactInfo.email} 
+                             {copied.email ? (
+                                <Check className="text-green-600" size={20} />
+                             ) : (
+                                <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
+                             )}
+                          </button>
+                        ) : (
+                          <p className="text-gray-400">Đang tải...</p>
+                        )}
                      </div>
 
                      <div className="group">
                         <label className="text-sm font-bold block mb-1">Hotline</label>
-                        <button
-                           onClick={() => copyToClipboard('+84908583042', 'phone')}
-                           className="text-xl md:text-2xl font-bold flex items-center gap-2 hover:text-orange-600 transition-colors cursor-pointer"
-                        >
-                           (+84) 908 583 042 
-                           {copied.phone ? (
-                              <Check className="text-green-600" size={20} />
-                           ) : (
-                              <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
-                           )}
-                        </button>
+                        {contactInfo.hotline ? (
+                          <button
+                             onClick={() => copyToClipboard(contactInfo.hotline.replace(/\s/g, ''), 'phone')}
+                             className="text-xl md:text-2xl font-bold flex items-center gap-2 hover:text-orange-600 transition-colors cursor-pointer"
+                          >
+                             {contactInfo.hotline} 
+                             {copied.phone ? (
+                                <Check className="text-green-600" size={20} />
+                             ) : (
+                                <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" size={20} />
+                             )}
+                          </button>
+                        ) : (
+                          <p className="text-gray-400">Đang tải...</p>
+                        )}
                      </div>
                   </Reveal>
                </div>
@@ -226,16 +236,24 @@ export default function Contact() {
                      
                      <div className="mb-8">
                         <h4 className="text-lg font-bold mb-2 flex items-center gap-2"><MapPin size={16}/> Business registration</h4>
-                        <p className="text-gray-600 leading-relaxed">
-                           No 5, B12, TT51, Cam Hoi, Dong Nhan,<br/> Hai Ba Trung, Hanoi
-                        </p>
+                        {contactInfo.business_registration_address ? (
+                          <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                             {contactInfo.business_registration_address}
+                          </p>
+                        ) : (
+                          <p className="text-gray-400">Đang tải...</p>
+                        )}
                      </div>
 
                      <div>
                         <h4 className="text-lg font-bold mb-2 flex items-center gap-2"><MapPin size={16}/> Office</h4>
-                        <p className="text-gray-600 leading-relaxed">
-                           Floor 4, MindX, 505 Minh Khai, Vinh Tuy,<br/> Hai Ba Trung, Hanoi
-                        </p>
+                        {contactInfo.office_address ? (
+                          <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                             {contactInfo.office_address}
+                          </p>
+                        ) : (
+                          <p className="text-gray-400">Đang tải...</p>
+                        )}
                      </div>
                   </Reveal>
                </div>

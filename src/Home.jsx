@@ -2,6 +2,10 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Box, PenTool, Layout, Monitor, Ruler, Users, Lightbulb, Megaphone, Download, Menu, X, ArrowUpRight, Sparkles, ChevronDown, Check } from 'lucide-react';
+import { useDownloadProfiles } from './hooks/useDownloadProfiles';
+import { useContactInfo } from './hooks/useContactInfo';
+import { useProjects } from './hooks/useProjects';
+import { useTrustedPartners } from './hooks/useTrustedPartners';
 
 // --- DATA SOURCE ---
 
@@ -70,50 +74,9 @@ const hubs = [
   }
 ];
 
-const projects = [
-  {
-    id: 1,
-    title: "Land Rover 3S Pilot",
-    category: "Showroom",
-    year: "2023",
-    image: "https://images.unsplash.com/photo-1620521369796-0371804f867c?q=80&w=2070&auto=format&fit=crop",
-    layout: "col-span-1 md:col-span-2 row-span-2 aspect-[4/3]" 
-  },
-  {
-    id: 2,
-    title: "Beta Cineplex",
-    category: "Entertainment",
-    year: "2018",
-    image: "https://images.unsplash.com/photo-1517604931442-71053e3e2c28?q=80&w=2069&auto=format&fit=crop",
-    layout: "col-span-1 row-span-1 aspect-square"
-  },
-  {
-    id: 3,
-    title: "Diageo Kick-off",
-    category: "Event",
-    year: "2022",
-    image: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2069&auto=format&fit=crop",
-    layout: "col-span-1 row-span-1 aspect-square"
-  },
-  {
-    id: 4,
-    title: "Eurotile Center",
-    category: "Interior",
-    year: "2020",
-    image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop",
-    layout: "col-span-1 md:col-span-2 row-span-1 aspect-[21/9]"
-  }
-];
+// Projects đã được load từ Supabase qua useProjects hook
 
-const clientLogos = [
-  { name: "Microsoft", url: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
-  { name: "Land Rover", url: "https://upload.wikimedia.org/wikipedia/en/thumb/9/9f/Land_Rover_logo_black.svg/1200px-Land_Rover_logo_black.svg.png" },
-  { name: "Porsche", url: "https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Porsche_Wappen.svg/1200px-Porsche_Wappen.svg.png" },
-  { name: "VietinBank", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Logo_VietinBank.svg/2560px-Logo_VietinBank.svg.png" },
-  { name: "Vietravel", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Logo_Vietravel.svg/2560px-Logo_Vietravel.svg.png" },
-  { name: "Diageo", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Diageo_logo.svg/2560px-Diageo_logo.svg.png" },
-  { name: "TOTO", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/TOTO_Logo.svg/2560px-TOTO_Logo.svg.png" },
-];
+// clientLogos đã được load từ Supabase qua useTrustedPartners hook
 
 // --- ANIMATION COMPONENTS ---
 
@@ -169,11 +132,42 @@ const ImageSlideshow = () => {
 };
 
 export default function ProhubWebsiteV11() {
+  const { profiles } = useDownloadProfiles();
+  const { contactInfo } = useContactInfo();
+  const { projects: allProjects, loading: projectsLoading } = useProjects();
+  const { partners: clientLogos, loading: partnersLoading } = useTrustedPartners();
   const { scrollY } = useScroll();
   const yHero = useTransform(scrollY, [0, 500], [0, 150]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Lấy featured projects (tối đa 4, sắp xếp theo home_order)
+  const featuredProjects = allProjects
+    .filter(p => p.is_featured === true)
+    .sort((a, b) => (a.home_order || 999) - (b.home_order || 999))
+    .slice(0, 4)
+    .map(project => {
+      const projectName = project.external_content?.projectName || project.title || '';
+      const category = project.project_categories?.name || 'Project';
+      
+      // Xác định layout dựa trên layout từ database
+      let layoutClass = "col-span-1 row-span-1 aspect-square";
+      if (project.layout === 'landscape') {
+        layoutClass = "col-span-1 md:col-span-2 row-span-1 aspect-[21/9]";
+      } else if (project.layout === 'portrait') {
+        layoutClass = "col-span-1 row-span-1 aspect-square";
+      }
+      
+      return {
+        id: project.id,
+        title: projectName,
+        category: category,
+        year: project.year || '',
+        image: project.images?.[0] || '',
+        layout: layoutClass
+      };
+    });
 
   const copyToClipboard = async (text, type) => {
     try {
@@ -498,8 +492,14 @@ export default function ProhubWebsiteV11() {
                 </Link>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-4">
-                {projects.map((project, index) => (
+             {projectsLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+                  <p className="text-gray-400">Đang tải...</p>
+                </div>
+              ) : featuredProjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-4">
+                  {featuredProjects.map((project, index) => (
                    <motion.div 
                       key={index}
                       initial={{ opacity: 0 }}
@@ -528,8 +528,14 @@ export default function ProhubWebsiteV11() {
                          </div>
                       </div>
                    </motion.div>
-                ))}
-             </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-400">
+                  <p className="text-lg mb-2">Chưa có projects được chọn cho SELECTED WORKS</p>
+                  <p className="text-sm">Vui lòng chọn projects trong Admin → Projects → Check "Hiển thị ở SELECTED WORKS"</p>
+                </div>
+              )}
              
              <div className="mt-12 text-center md:hidden">
                 <Link 
@@ -563,30 +569,43 @@ export default function ProhubWebsiteV11() {
                      }
                   }}
                >
-                  {/* First Set */}
-                  <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
-                     {clientLogos.map((client, index) => (
-                        <div key={`first-${index}`} className="h-12 flex items-center flex-shrink-0 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                           {client.url ? (
-                              <img src={client.url} alt={client.name} className="h-full w-auto object-contain" />
-                           ) : (
-                              <span className="font-bold text-xl">{client.name}</span>
-                           )}
-                        </div>
-                     ))}
-                  </div>
-                  {/* Duplicate Set for Seamless Loop */}
-                  <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
-                     {clientLogos.map((client, index) => (
-                        <div key={`second-${index}`} className="h-12 flex items-center flex-shrink-0 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                           {client.url ? (
-                              <img src={client.url} alt={client.name} className="h-full w-auto object-contain" />
-                           ) : (
-                              <span className="font-bold text-xl">{client.name}</span>
-                           )}
-                        </div>
-                     ))}
-                  </div>
+                  {partnersLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto"></div>
+                    </div>
+                  ) : clientLogos.length > 0 ? (
+                    <>
+                      {/* First Set */}
+                      <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
+                         {clientLogos.map((client, index) => (
+                            <div key={`first-${client.id || index}`} className="h-12 flex items-center flex-shrink-0 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                               {client.logo_url ? (
+                                  <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
+                               ) : (
+                                  <span className="font-bold text-xl">{client.name}</span>
+                               )}
+                            </div>
+                         ))}
+                      </div>
+                      {/* Duplicate Set for Seamless Loop */}
+                      <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
+                         {clientLogos.map((client, index) => (
+                            <div key={`second-${client.id || index}`} className="h-12 flex items-center flex-shrink-0 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                               {client.logo_url ? (
+                                  <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
+                               ) : (
+                                  <span className="font-bold text-xl">{client.name}</span>
+                               )}
+                            </div>
+                         ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <p>Chưa có Trusted Partners</p>
+                      <p className="text-sm mt-2">Vui lòng thêm trong Admin → Trusted Partners</p>
+                    </div>
+                  )}
                </motion.div>
             </div>
          </div>
@@ -599,18 +618,30 @@ export default function ProhubWebsiteV11() {
             <div>
                <h2 className="text-5xl font-black tracking-tighter mb-8">PROHUB.</h2>
                <div className="flex flex-col gap-4">
-                  <a href="#" className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest hover:text-blue-600 transition-colors group">
-                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        <Download size={14} />
-                     </div>
-                     Download Profile (EN)
-                  </a>
-                  <a href="#" className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest hover:text-blue-600 transition-colors group">
-                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        <Download size={14} />
-                     </div>
-                     Download Profile (VN)
-                  </a>
+                  {profiles.en ? (
+                    <a 
+                      href={profiles.en.file_url} 
+                      download={profiles.en.file_name || 'profile-en.pdf'}
+                      className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest hover:text-blue-600 transition-colors group"
+                    >
+                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                          <Download size={14} />
+                       </div>
+                       Download Profile (EN)
+                    </a>
+                  ) : null}
+                  {profiles.vn ? (
+                    <a 
+                      href={profiles.vn.file_url} 
+                      download={profiles.vn.file_name || 'profile-vn.pdf'}
+                      className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest hover:text-blue-600 transition-colors group"
+                    >
+                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                          <Download size={14} />
+                       </div>
+                       Download Profile (VN)
+                    </a>
+                  ) : null}
                </div>
             </div>
 
@@ -618,24 +649,33 @@ export default function ProhubWebsiteV11() {
             <div className="space-y-8">
                <div>
                   <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Say Hello</h4>
-                  <button
-                    onClick={() => copyToClipboard('vannhi@pro-hub.com.vn', 'email')}
-                    className="block text-xl font-bold hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
-                  >
-                    vannhi@pro-hub.com.vn
-                  </button>
-                  <button
-                    onClick={() => copyToClipboard('+84908583042', 'phone')}
-                    className="block text-xl font-bold hover:text-blue-600 transition-colors cursor-pointer mt-1 bg-transparent border-0 p-0"
-                  >
-                    (+84) 908 583 042
-                  </button>
+                  {contactInfo.email ? (
+                    <button
+                      onClick={() => copyToClipboard(contactInfo.email, 'email')}
+                      className="block text-xl font-bold hover:text-blue-600 transition-colors cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      {contactInfo.email}
+                    </button>
+                  ) : (
+                    <p className="text-gray-400">Đang tải...</p>
+                  )}
+                  {contactInfo.hotline ? (
+                    <button
+                      onClick={() => copyToClipboard(contactInfo.hotline.replace(/\s/g, ''), 'phone')}
+                      className="block text-xl font-bold hover:text-blue-600 transition-colors cursor-pointer mt-1 bg-transparent border-0 p-0"
+                    >
+                      {contactInfo.hotline}
+                    </button>
+                  ) : null}
                </div>
 
                <div>
                   <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Office</h4>
-                  <p className="font-medium text-lg mb-1">No 5, B12, TT51, Cam Hoi, Hanoi</p>
-                  <p className="text-gray-500">MindX, 505 Minh Khai, Hanoi</p>
+                  {contactInfo.office_address ? (
+                    <p className="font-medium text-lg mb-1 whitespace-pre-line">{contactInfo.office_address}</p>
+                  ) : (
+                    <p className="text-gray-400">Đang tải...</p>
+                  )}
                </div>
             </div>
 
@@ -643,7 +683,16 @@ export default function ProhubWebsiteV11() {
             <div>
                <div className="w-full h-48 md:h-64 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
                   <iframe
-                     src="https://www.google.com/maps?q=No+5,+B12,+TT51,+Cam+Hoi,+Hanoi,+Vietnam&output=embed"
+                     src={
+                        // Nếu có google_map_url và là embed URL, dùng trực tiếp
+                        contactInfo.google_map_url && contactInfo.google_map_url.includes('/embed')
+                           ? contactInfo.google_map_url
+                           // Nếu có địa chỉ office, dùng để tạo embed URL
+                           : contactInfo.office_address
+                           ? `https://www.google.com/maps?q=${encodeURIComponent(contactInfo.office_address)}&output=embed`
+                           // Fallback: dùng địa chỉ mặc định
+                           : `https://www.google.com/maps?q=No+5,+B12,+TT51,+Cam+Hoi,+Hanoi,+Vietnam&output=embed`
+                     }
                      width="100%"
                      height="100%"
                      style={{ border: 0 }}
@@ -653,14 +702,34 @@ export default function ProhubWebsiteV11() {
                      className="w-full h-full"
                   ></iframe>
                </div>
-               <a 
-                  href="https://maps.app.goo.gl/itzqYqQWK1zt9HLN9" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-block mt-3 text-sm text-gray-500 hover:text-blue-600 transition-colors"
-               >
-                  View on Google Maps →
-               </a>
+               {contactInfo.google_map_url ? (
+                 <a 
+                    href={contactInfo.google_map_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block mt-3 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+                 >
+                    View on Google Maps →
+                 </a>
+               ) : contactInfo.office_address ? (
+                 <a 
+                    href={`https://www.google.com/maps?q=${encodeURIComponent(contactInfo.office_address)}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block mt-3 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+                 >
+                    View on Google Maps →
+                 </a>
+               ) : (
+                 <a 
+                    href="https://maps.app.goo.gl/itzqYqQWK1zt9HLN9" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block mt-3 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+                 >
+                    View on Google Maps →
+                 </a>
+               )}
             </div>
          </div>
          <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-gray-100 text-xs font-bold uppercase tracking-widest text-gray-400">
