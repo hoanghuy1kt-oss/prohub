@@ -578,25 +578,35 @@ export default function ProhubWebsiteV11() {
                       {/* First Set */}
                       <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
                          {clientLogos.map((client, index) => (
-                            <div key={`first-${client.id || index}`} className="h-12 flex items-center flex-shrink-0">
+                            <motion.div 
+                              key={`first-${client.id || index}`} 
+                              className="h-12 flex items-center flex-shrink-0"
+                              whileHover={{ y: -5 }}
+                              transition={{ duration: 0.2 }}
+                            >
                                {client.logo_url ? (
                                   <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
                                ) : (
                                   <span className="font-bold text-xl">{client.name}</span>
                                )}
-                            </div>
+                            </motion.div>
                          ))}
                       </div>
                       {/* Duplicate Set for Seamless Loop */}
                       <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
                          {clientLogos.map((client, index) => (
-                            <div key={`second-${client.id || index}`} className="h-12 flex items-center flex-shrink-0">
+                            <motion.div 
+                              key={`second-${client.id || index}`} 
+                              className="h-12 flex items-center flex-shrink-0"
+                              whileHover={{ y: -5 }}
+                              transition={{ duration: 0.2 }}
+                            >
                                {client.logo_url ? (
                                   <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
                                ) : (
                                   <span className="font-bold text-xl">{client.name}</span>
                                )}
-                            </div>
+                            </motion.div>
                          ))}
                       </div>
                     </>
