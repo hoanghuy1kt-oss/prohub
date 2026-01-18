@@ -4,6 +4,8 @@ import ProhubWebsiteV11 from './Home.jsx'
 import About from './About.jsx'
 import Contact from './Contact.jsx'
 import Projects from './Projects.jsx'
+import ProjectDetail from './pages/ProjectDetail.jsx'
+import InternalContentPage from './pages/InternalContentPage.jsx'
 import PageTransition from './components/PageTransition.jsx'
 import TestSupabase from './components/TestSupabase.jsx'
 import AdminLogin from './pages/AdminLogin.jsx'
@@ -39,6 +41,18 @@ function AppRoutes() {
               <Projects />
             </PageTransition>
           } 
+        />
+        <Route 
+          path="/projects/:id" 
+          element={
+            <PageTransition>
+              <ProjectDetail />
+            </PageTransition>
+          } 
+        />
+        <Route 
+          path="/internal-content/:filename" 
+          element={<InternalContentPage />} 
         />
         <Route 
           path="/contact" 

@@ -1,6 +1,133 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Trash2, Save, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { useInternalContent } from '../../hooks/useInternalContent';
+import { Plus, Trash2, Save, Upload, X, Image as ImageIcon, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Số lượng hình ảnh tối đa cho mỗi project
+const MAX_IMAGES = 10;
+
+// Sortable Project Item Component
+function SortableProjectItem({ project, selectedProject, setSelectedProject, handleToggleFeatured, handleDeleteProject, MAX_IMAGES }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`border-2 rounded-lg p-4 cursor-pointer transition-colors relative ${
+        selectedProject?.id === project.id
+          ? 'border-orange-500 bg-orange-50'
+          : project.is_featured
+          ? 'border-blue-500 bg-blue-50'
+          : 'border-gray-200 hover:border-gray-300'
+      }`}
+      onClick={() => setSelectedProject(project)}
+    >
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-2 left-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical size={16} />
+      </div>
+
+      {/* Featured Badge */}
+      {project.is_featured && (
+        <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">
+          #{project.home_order}
+        </div>
+      )}
+      
+      <div className="flex justify-between items-start mb-2 pl-6">
+        <div className="flex items-start gap-2 flex-1">
+          {/* Checkbox for Featured */}
+          <input
+            type="checkbox"
+            checked={project.is_featured || false}
+            onChange={(e) => handleToggleFeatured(project, e)}
+            className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="flex-1">
+            <h3 className="font-bold">{project.title || 'Untitled'}</h3>
+            <p className="text-sm text-gray-500 mt-1">{project.location}</p>
+            
+            {/* Category Info */}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-400">Category:</span>
+              <span className="text-xs text-gray-600 font-semibold">
+                {project.project_categories?.name || 'Chưa có'}
+              </span>
+            </div>
+            
+            {/* Internal Content Info */}
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-400">Internal Content:</span>
+              <span className="text-xs text-gray-600 font-semibold">
+                {project.internal_content?.file_name 
+                  ? project.internal_content.file_name.replace('.jsx', '')
+                  : 'Chưa có'}
+              </span>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteProject(project.id);
+          }}
+          className="text-red-500 hover:text-red-700 ml-2"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      
+      {project.images && project.images.length > 0 && (
+        <div className="mt-2 flex gap-1">
+          {project.images.slice(0, MAX_IMAGES).map((img, idx) => (
+            <img key={idx} src={img} alt="" className="w-12 h-12 object-cover rounded" />
+          ))}
+          {project.images.length > MAX_IMAGES && (
+            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-xs">
+              +{project.images.length - MAX_IMAGES}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProjectsEditor() {
   const [categories, setCategories] = useState([]);
@@ -8,6 +135,7 @@ export default function ProjectsEditor() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { contents: internalContents, loading: internalContentsLoading } = useInternalContent();
 
   useEffect(() => {
     loadCategories();
@@ -42,7 +170,7 @@ export default function ProjectsEditor() {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('*, project_categories(*)')
+        .select('*, project_categories(*), internal_content(*)')
         .order('order_index');
       
       if (error) {
@@ -158,28 +286,78 @@ export default function ProjectsEditor() {
         .from('project-images')
         .getPublicUrl(fileName);
       
-      // Update project images (tối đa 3)
-      const project = projects.find(p => p.id === projectId);
-      const currentImages = project?.images || [];
+      // Kiểm tra xem project có phải temp project không
+      const isTempProject = projectId.startsWith('temp-');
       
-      if (currentImages.length >= 3) {
-        alert('Đã đạt tối đa 3 hình ảnh');
+      if (isTempProject) {
+        // Nếu là temp project, chỉ update state (không update database)
+        const currentImages = selectedProject?.images || [];
+        
+        if (currentImages.length >= MAX_IMAGES) {
+          alert(`Đã đạt tối đa ${MAX_IMAGES} hình ảnh`);
+          return null;
+        }
+        
+        const updatedImages = [...currentImages, publicUrl].slice(0, MAX_IMAGES);
+        
+        // Chỉ update state
+        if (selectedProject && selectedProject.id === projectId) {
+          setSelectedProject({...selectedProject, images: updatedImages});
+        }
+        
+        // Update trong projects list state
+        setProjects(projects.map(p => 
+          p.id === projectId 
+            ? {...p, images: updatedImages}
+            : p
+        ));
+        
+        return publicUrl;
+      }
+      
+      // Nếu là project thật (có ID hợp lệ), update database
+      // Lấy images hiện tại từ database thay vì từ state để tránh race condition
+      const { data: currentProject } = await supabase
+        .from('projects')
+        .select('images')
+        .eq('id', projectId)
+        .single();
+      
+      const currentImages = currentProject?.images || [];
+      
+      if (currentImages.length >= MAX_IMAGES) {
+        alert(`Đã đạt tối đa ${MAX_IMAGES} hình ảnh`);
         return null;
       }
       
-      const updatedImages = [...currentImages, publicUrl].slice(0, 3);
+      const updatedImages = [...currentImages, publicUrl].slice(0, MAX_IMAGES);
       
-      // Update trong state trước
-      if (selectedProject && selectedProject.id === projectId) {
-        setSelectedProject({...selectedProject, images: updatedImages});
-      }
-      
-      await supabase
+      // Update vào database
+      const { error: updateError } = await supabase
         .from('projects')
         .update({ images: updatedImages })
         .eq('id', projectId);
       
-      loadProjects();
+      if (updateError) {
+        alert('Lỗi cập nhật: ' + updateError.message);
+        return null;
+      }
+      
+      // Query lại project từ database để có dữ liệu mới nhất
+      const { data: updatedProjectData } = await supabase
+        .from('projects')
+        .select('*, project_categories(*), internal_content(*)')
+        .eq('id', projectId)
+        .single();
+      
+      // Reload projects list
+      await loadProjects();
+      
+      // Update selectedProject nếu đang chọn project này
+      if (selectedProject && selectedProject.id === projectId && updatedProjectData) {
+        setSelectedProject(updatedProjectData);
+      }
+      
       return publicUrl;
     } catch (error) {
       alert('Lỗi: ' + error.message);
@@ -215,9 +393,9 @@ export default function ProjectsEditor() {
       type: '',
       year: '',
       external_content: {},
-      internal_content: {},
+      internal_content_id: null,
       images: [],
-      layout: 'portrait',
+      layout: 'landscape',
       order_index: projects.length,
       is_featured: false,
       home_order: null
@@ -231,22 +409,27 @@ export default function ProjectsEditor() {
     setLoading(true);
     
     try {
+      // Prepare update data with internal_content_id
+      const updateData = {
+        category_id: project.category_id,
+        title: project.title,
+        location: project.location,
+        area: project.area,
+        type: project.type,
+        year: project.year,
+        external_content: project.external_content,
+        images: project.images,
+        layout: project.layout,
+        order_index: project.order_index,
+        internal_content_id: project.internal_content_id || null
+      };
+
       if (project.id.startsWith('temp-')) {
         // Insert new
         const { error } = await supabase
           .from('projects')
           .insert({
-            category_id: project.category_id,
-            title: project.title,
-            location: project.location,
-            area: project.area,
-            type: project.type,
-            year: project.year,
-            external_content: project.external_content,
-            internal_content: project.internal_content,
-            images: project.images,
-            layout: project.layout,
-            order_index: project.order_index,
+            ...updateData,
             is_featured: project.is_featured || false,
             home_order: project.is_featured ? project.home_order : null
           });
@@ -257,17 +440,7 @@ export default function ProjectsEditor() {
         const { error } = await supabase
           .from('projects')
           .update({
-            category_id: project.category_id,
-            title: project.title,
-            location: project.location,
-            area: project.area,
-            type: project.type,
-            year: project.year,
-            external_content: project.external_content,
-            internal_content: project.internal_content,
-            images: project.images,
-            layout: project.layout,
-            order_index: project.order_index,
+            ...updateData,
             updated_at: new Date().toISOString()
           })
           .eq('id', project.id);
@@ -360,6 +533,63 @@ export default function ProjectsEditor() {
     ? projects.filter(p => p.category_id === selectedCategory)
     : projects; // Hiển thị tất cả nếu selectedCategory là null
 
+  // Sắp xếp projects theo order_index
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const orderA = a.order_index ?? 9999;
+    const orderB = b.order_index ?? 9999;
+    return orderA - orderB;
+  });
+
+  // Drag and Drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = sortedProjects.findIndex((p) => p.id === active.id);
+    const newIndex = sortedProjects.findIndex((p) => p.id === over.id);
+
+    const newOrderedProjects = arrayMove(sortedProjects, oldIndex, newIndex);
+
+    // Nếu có selectedCategory, chỉ update projects trong category đó
+    // Nếu không có selectedCategory (tất cả), update tất cả projects
+    const projectsToUpdate = selectedCategory 
+      ? newOrderedProjects.filter(p => p.category_id === selectedCategory)
+      : newOrderedProjects;
+
+    // Update order_index cho projects
+    try {
+      const updatePromises = projectsToUpdate.map((project, index) => {
+        // Chỉ update nếu không phải temp project
+        if (!project.id.startsWith('temp-')) {
+          return supabase
+            .from('projects')
+            .update({ order_index: index })
+            .eq('id', project.id);
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      await Promise.all(updatePromises);
+      
+      // Reload projects để cập nhật UI
+      await loadProjects();
+    } catch (error) {
+      console.error('Error updating project order:', error);
+      alert('Lỗi khi cập nhật thứ tự: ' + error.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -406,68 +636,31 @@ export default function ProjectsEditor() {
         </div>
       </div>
 
-      {/* Projects List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredProjects.map(project => (
-          <div
-            key={project.id}
-            className={`border-2 rounded-lg p-4 cursor-pointer transition-colors relative ${
-              selectedProject?.id === project.id
-                ? 'border-orange-500 bg-orange-50'
-                : project.is_featured
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-            onClick={() => setSelectedProject(project)}
-          >
-            {/* Featured Badge */}
-            {project.is_featured && (
-              <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded">
-                #{project.home_order}
-              </div>
-            )}
-            
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-start gap-2 flex-1">
-                {/* Checkbox for Featured */}
-                <input
-                  type="checkbox"
-                  checked={project.is_featured || false}
-                  onChange={(e) => handleToggleFeatured(project, e)}
-                  className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <div className="flex-1">
-                  <h3 className="font-bold">{project.title || 'Untitled'}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{project.location}</p>
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteProject(project.id);
-                }}
-                className="text-red-500 hover:text-red-700 ml-2"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-            
-            {project.images && project.images.length > 0 && (
-              <div className="mt-2 flex gap-1">
-                {project.images.slice(0, 3).map((img, idx) => (
-                  <img key={idx} src={img} alt="" className="w-12 h-12 object-cover rounded" />
-                ))}
-                {project.images.length > 3 && (
-                  <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-xs">
-                    +{project.images.length - 3}
-                  </div>
-                )}
-              </div>
-            )}
+      {/* Projects List with Drag and Drop */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={sortedProjects.map(p => p.id)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedProjects.map(project => (
+              <SortableProjectItem
+                key={project.id}
+                project={project}
+                selectedProject={selectedProject}
+                setSelectedProject={setSelectedProject}
+                handleToggleFeatured={handleToggleFeatured}
+                handleDeleteProject={handleDeleteProject}
+                MAX_IMAGES={MAX_IMAGES}
+              />
+            ))}
           </div>
-        ))}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Project Editor Modal */}
       {selectedProject && (
@@ -524,6 +717,28 @@ export default function ProjectsEditor() {
                     placeholder="VTDF @ITE 2022"
                   />
                   <p className="text-xs text-gray-500 mt-1">Hiển thị in đậm dưới hình ảnh</p>
+                </div>
+
+                {/* 2.5. Client Name */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tên Khách hàng</label>
+                  <input
+                    type="text"
+                    value={selectedProject.external_content?.clientName || ''}
+                    onChange={(e) => {
+                      const externalContent = selectedProject.external_content || {};
+                      setSelectedProject({
+                        ...selectedProject,
+                        external_content: {
+                          ...externalContent,
+                          clientName: e.target.value
+                        }
+                      });
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Tên khách hàng"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Hiển thị dưới Project Name</p>
                 </div>
 
                 {/* 3. Location */}
@@ -643,12 +858,12 @@ export default function ProjectsEditor() {
                 <div>
                   <label className="block text-sm font-medium mb-2">Layout</label>
                   <select
-                    value={selectedProject.layout || 'portrait'}
+                    value={selectedProject.layout || 'landscape'}
                     onChange={(e) => setSelectedProject({...selectedProject, layout: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="portrait">Portrait</option>
                     <option value="landscape">Landscape</option>
+                    <option value="portrait">Portrait</option>
                   </select>
                 </div>
 
@@ -657,11 +872,11 @@ export default function ProjectsEditor() {
                   <label className="block text-sm font-medium mb-2">
                     Hình ảnh
                     <span className="text-xs text-gray-500 ml-2 font-normal">
-                      (Tối đa 3 tấm, mỗi tấm tối đa 3MB - tự động resize/compress)
+                      (Tối đa {MAX_IMAGES} tấm, mỗi tấm tối đa 3MB - tự động resize/compress)
                     </span>
                   </label>
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    {selectedProject.images?.slice(0, 3).map((img, idx) => (
+                  <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mb-2">
+                    {selectedProject.images?.slice(0, MAX_IMAGES).map((img, idx) => (
                       <div key={idx} className="relative group">
                         <img src={img} alt="" className="w-full h-24 object-cover rounded" />
                         <button
@@ -675,25 +890,50 @@ export default function ProjectsEditor() {
                         </button>
                       </div>
                     ))}
-                    {/* Placeholder slots nếu chưa đủ 3 */}
-                    {(!selectedProject.images || selectedProject.images.length < 3) && (
-                      Array.from({ length: 3 - (selectedProject.images?.length || 0) }).map((_, idx) => (
-                        <div key={`placeholder-${idx}`} className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                          <span className="text-xs text-gray-400">Slot {selectedProject.images?.length + idx + 1}</span>
-                        </div>
-                      ))
+                    {/* Placeholder slots nếu chưa đủ */}
+                    {(!selectedProject.images || selectedProject.images.length < MAX_IMAGES) && (
+                      Array.from({ length: MAX_IMAGES - (selectedProject.images?.length || 0) }).map((_, idx) => {
+                        const slotIndex = selectedProject.images?.length + idx;
+                        return (
+                          <label key={`slot-${slotIndex}`} className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                            <Upload size={16} className="text-gray-400 mb-1" />
+                            <span className="text-xs text-gray-400">Slot {slotIndex + 1}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                
+                                const currentCount = selectedProject.images?.length || 0;
+                                if (currentCount >= MAX_IMAGES) {
+                                  alert(`Đã đạt tối đa ${MAX_IMAGES} hình ảnh`);
+                                  return;
+                                }
+                                
+                                await handleImageUpload(file, selectedProject.id);
+                                // selectedProject đã được update trong handleImageUpload
+                                
+                                // Reset input
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        );
+                      })
                     )}
                   </div>
                   <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
-                    selectedProject.images && selectedProject.images.length >= 3
+                    selectedProject.images && selectedProject.images.length >= MAX_IMAGES
                       ? 'bg-gray-300 cursor-not-allowed opacity-50'
                       : 'bg-gray-100 hover:bg-gray-200'
                   }`}>
                     <Upload size={18} />
                     <span>
-                      {selectedProject.images && selectedProject.images.length >= 3
-                        ? 'Đã đạt tối đa 3 hình'
-                        : `Upload hình ảnh (${selectedProject.images?.length || 0}/3)`
+                      {selectedProject.images && selectedProject.images.length >= MAX_IMAGES
+                        ? `Đã đạt tối đa ${MAX_IMAGES} hình`
+                        : `Upload hình ảnh (${selectedProject.images?.length || 0}/${MAX_IMAGES})`
                       }
                     </span>
                     <input
@@ -701,46 +941,61 @@ export default function ProjectsEditor() {
                       accept="image/*"
                       multiple
                       className="hidden"
-                      disabled={selectedProject.images && selectedProject.images.length >= 3}
-                      onChange={(e) => {
+                      disabled={selectedProject.images && selectedProject.images.length >= MAX_IMAGES}
+                      onChange={async (e) => {
                         const files = Array.from(e.target.files);
                         const currentCount = selectedProject.images?.length || 0;
-                        const remainingSlots = 3 - currentCount;
+                        const remainingSlots = MAX_IMAGES - currentCount;
                         
                         if (remainingSlots <= 0) {
-                          alert('Đã đạt tối đa 3 hình ảnh');
+                          alert(`Đã đạt tối đa ${MAX_IMAGES} hình ảnh`);
                           return;
                         }
                         
                         const filesToUpload = files.slice(0, remainingSlots);
                         
-                        // Upload files (sẽ tự động resize/compress trong handleImageUpload nếu > 3MB)
-                        filesToUpload.forEach(file => {
-                          handleImageUpload(file, selectedProject.id);
-                        });
+                        // Upload files tuần tự (sequential) để tránh race condition
+                        for (const file of filesToUpload) {
+                          await handleImageUpload(file, selectedProject.id);
+                          // selectedProject đã được update trong handleImageUpload
+                        }
+                        
+                        // Reset input để có thể chọn lại file
+                        e.target.value = '';
                       }}
                     />
                   </label>
                 </div>
 
-                {/* 9. Internal Content (JSON) */}
+                {/* 9. Internal Content Selector */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Internal Content (JSON)</label>
-                  <textarea
-                    value={JSON.stringify(selectedProject.internal_content || {}, null, 2)}
+                  <label className="block text-sm font-medium mb-2">Internal Content</label>
+                  <select
+                    value={selectedProject.internal_content_id || ''}
                     onChange={(e) => {
-                      try {
-                        const parsed = JSON.parse(e.target.value);
-                        setSelectedProject({...selectedProject, internal_content: parsed});
-                      } catch (err) {
-                        // Invalid JSON, keep as is
-                      }
+                      const value = e.target.value || null;
+                      setSelectedProject({...selectedProject, internal_content_id: value});
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm"
-                    rows="6"
-                    placeholder='{"fullDescription": "...", "client": "...", "services": [...]}'
-                  />
-                  <p className="text-xs text-gray-500 mt-1">JSON format cho nội dung chi tiết</p>
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                    disabled={internalContentsLoading}
+                  >
+                    <option value="">-- Không chọn --</option>
+                    {internalContents.map((content) => (
+                      <option key={content.id} value={content.id}>
+                        {content.display_name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Chọn 1 Internal Content để gán cho project này (có thể tìm kiếm trong tab Internal Content)
+                  </p>
+                  {selectedProject.internal_content_id && (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-600">
+                        Đã chọn: {internalContents.find(c => c.id === selectedProject.internal_content_id)?.display_name}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

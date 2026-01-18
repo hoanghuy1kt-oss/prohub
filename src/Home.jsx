@@ -204,9 +204,9 @@ export default function ProhubWebsiteV11() {
         <Link 
           to="/" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
-          className="text-2xl font-black tracking-tighter cursor-pointer z-50"
+          className="flex items-center cursor-pointer z-50"
         >
-          PROHUB.
+          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
         </Link>
         <div 
             className="md:hidden cursor-pointer z-50"
@@ -578,7 +578,7 @@ export default function ProhubWebsiteV11() {
                       {/* First Set */}
                       <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
                          {clientLogos.map((client, index) => (
-                            <div key={`first-${client.id || index}`} className="h-12 flex items-center flex-shrink-0 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                            <div key={`first-${client.id || index}`} className="h-12 flex items-center flex-shrink-0">
                                {client.logo_url ? (
                                   <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
                                ) : (
@@ -590,7 +590,7 @@ export default function ProhubWebsiteV11() {
                       {/* Duplicate Set for Seamless Loop */}
                       <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
                          {clientLogos.map((client, index) => (
-                            <div key={`second-${client.id || index}`} className="h-12 flex items-center flex-shrink-0 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                            <div key={`second-${client.id || index}`} className="h-12 flex items-center flex-shrink-0">
                                {client.logo_url ? (
                                   <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
                                ) : (

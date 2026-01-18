@@ -31,10 +31,10 @@ export function useProjects() {
         setCategories(categoriesData);
       }
 
-      // Load projects
+      // Load projects with internal_content relation
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
-        .select('*, project_categories(*)')
+        .select('*, project_categories(*), internal_content(*)')
         .order('order_index');
 
       if (projectsError) {
@@ -53,7 +53,13 @@ export function useProjects() {
   const getProjectsByCategory = (categorySlug) => {
     const category = categories.find(cat => cat.slug === categorySlug);
     if (!category) return [];
-    return projects.filter(p => p.category_id === category.id);
+    return projects
+      .filter(p => p.category_id === category.id)
+      .sort((a, b) => {
+        const orderA = a.order_index ?? 9999;
+        const orderB = b.order_index ?? 9999;
+        return orderA - orderB;
+      });
   };
 
   return {

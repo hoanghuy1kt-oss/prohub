@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Menu, X, ArrowUpRight, Download } from 'lucide-react';
 import { useDownloadProfiles } from './hooks/useDownloadProfiles';
 import { useProjects } from './hooks/useProjects';
@@ -76,12 +76,15 @@ const ImageCarousel = ({ images, alt = '' }) => {
 };
 
 const ProjectCard = ({ project, layout = "portrait", index = 0 }) => {
+  const navigate = useNavigate();
   const projectName = project.external_content?.projectName || project.title || '';
+  const clientName = project.external_content?.clientName || '';
   const year = project.year || '';
   const location = project.location || '';
   const highlights = project.external_content?.highlights || '';
   const shortDescription = project.external_content?.shortDescription || '';
   const images = project.images || [];
+  const hasInternalContent = project.internal_content_id && project.internal_content;
   
   const formatTitle = () => {
     if (projectName && year) {
@@ -94,6 +97,15 @@ const ProjectCard = ({ project, layout = "portrait", index = 0 }) => {
     return 'Untitled';
   };
 
+  const handleClick = () => {
+    // Chỉ navigate nếu có Internal Content
+    if (hasInternalContent && project.internal_content?.file_name) {
+      // Navigate đến URL với file_name (không có extension .jsx)
+      const fileNameWithoutExt = project.internal_content.file_name.replace('.jsx', '');
+      navigate(`/projects/${fileNameWithoutExt}`);
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 50 }}
@@ -101,21 +113,24 @@ const ProjectCard = ({ project, layout = "portrait", index = 0 }) => {
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.6, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -10 }}
-      className="group cursor-pointer"
+      className={`group ${hasInternalContent ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+      onClick={handleClick}
     >
       <div className={`relative overflow-hidden bg-gray-100 mb-6 ${layout === "landscape" ? "aspect-[16/9]" : "aspect-[4/5]"} rounded-lg`}>
         <ImageCarousel images={images} alt={projectName} />
         
-        {/* Hover effect với lớp phủ */}
+        {/* Hover effect với lớp phủ - luôn hiển thị nhưng chỉ có arrow nếu có Internal Content */}
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          {/* Dấu mũi tên ở giữa - luôn hiển thị khi hover */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-white/90 backdrop-blur-sm p-4 rounded-full">
-              <ArrowRight className="w-6 h-6 text-black" />
+          {/* Dấu mũi tên ở giữa - chỉ hiển thị nếu có Internal Content */}
+          {hasInternalContent && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white/90 backdrop-blur-sm p-4 rounded-full">
+                <ArrowRight className="w-6 h-6 text-black" />
+              </div>
             </div>
-          </div>
+          )}
           
-          {/* Short Description ở góc trái dưới khi hover (nếu có) */}
+          {/* Short Description ở góc trái dưới khi hover (nếu có) - hiển thị cho tất cả project */}
           {shortDescription && (
             <div className="absolute bottom-4 left-4 max-w-[80%] bg-black/80 backdrop-blur-sm rounded-lg p-3">
               <p className="text-white text-sm leading-relaxed line-clamp-2">
@@ -127,9 +142,15 @@ const ProjectCard = ({ project, layout = "portrait", index = 0 }) => {
       </div>
       
       {(projectName || year) && (
-        <h3 className="text-xl font-bold mb-1 group-hover:text-orange-600 transition-colors">
+        <h3 className={`text-xl font-bold mb-1 ${hasInternalContent ? 'group-hover:text-orange-600 transition-colors' : ''}`}>
           {formatTitle()}
         </h3>
+      )}
+      
+      {clientName && (
+        <p className="text-sm text-gray-600 mb-1">
+          {clientName}
+        </p>
       )}
       
       {location && (
@@ -148,15 +169,11 @@ const ProjectCard = ({ project, layout = "portrait", index = 0 }) => {
 };
 
 export default function Projects() {
+  const navigate = useNavigate();
   const { profiles } = useDownloadProfiles();
   const { contactInfo } = useContactInfo();
-  const { getProjectsByCategory, loading } = useProjects();
+  const { getProjectsByCategory, categories, loading } = useProjects();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const exhibitions = getProjectsByCategory('exhibition');
-  const events = getProjectsByCategory('events');
-  const designs = getProjectsByCategory('design-hub');
-  const insights = getProjectsByCategory('project-insights');
 
   if (loading) {
     return (
@@ -178,9 +195,9 @@ export default function Projects() {
         <Link 
           to="/" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
-          className="text-2xl font-black tracking-tighter cursor-pointer z-50"
+          className="flex items-center cursor-pointer z-50"
         >
-          PROHUB.
+          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
         </Link>
         <div 
           className="md:hidden cursor-pointer z-50"
@@ -297,150 +314,198 @@ export default function Projects() {
         </div>
       </header>
 
-      {/* --- 1. EXHIBITION --- */}
-      {exhibitions.length > 0 && (
-        <section className="py-20 px-6 md:px-20 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <SectionTitle title="Exhibition" subtitle="Trade Shows & Booths" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {exhibitions.map((item, index) => (
-                <ProjectCard 
-                  key={item.id} 
-                  project={item} 
-                  layout={item.layout || "portrait"}
-                  index={index} 
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* --- Render Categories Dynamically --- */}
+      {categories
+        .filter(cat => {
+          // Nếu category có display_type, dùng nó
+          // Nếu không có, fallback dựa trên slug (backward compatibility)
+          if (cat.display_type) return true;
+          // Giữ lại các category cũ chưa có display_type (sẽ dùng grid-2 mặc định)
+          return true;
+        })
+        .sort((a, b) => (a.order_index ?? 9999) - (b.order_index ?? 9999))
+        .map((category, categoryIndex) => {
+          const categoryProjects = getProjectsByCategory(category.slug);
+          if (categoryProjects.length === 0) return null;
 
-      {/* --- 2. EVENTS --- */}
-      {events.length > 0 && (
-        <section className="py-20 px-6 md:px-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
-            <SectionTitle title="Events" subtitle="Corporate & Activation" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {events.map((item, index) => (
-                <ProjectCard 
-                  key={item.id} 
-                  project={item} 
-                  layout={item.layout || "landscape"}
-                  index={index} 
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+          // Fallback: Nếu không có display_type, dùng grid-2 mặc định
+          const displayType = category.display_type || 'grid-2';
+          const bgColor = categoryIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
 
-      {/* --- 3. DESIGN HUB --- */}
-      {designs.length > 0 && (
-        <section className="py-20 px-6 md:px-20 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-16"
-            >
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500 block mb-2">Concept & Visualization</span>
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">Design Hub</h2>
-              <div className="h-1 w-20 bg-black mt-6"></div>
-            </motion.div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {designs.map((item, index) => {
-                const projectName = item.external_content?.projectName || item.title || '';
-                const location = item.location || '';
-                const images = item.images || [];
-                
-                return (
+          // Grid 2 columns (INTERIOR/DESIGN HUB style)
+          if (displayType === 'grid-2') {
+            return (
+              <section key={category.id} className={`py-20 px-6 md:px-20 ${bgColor}`}>
+                <div className="max-w-7xl mx-auto">
                   <motion.div 
-                    key={item.id}
-                    initial={{ opacity: 0, y: 50 }}
+                    initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-50px" }}
-                    transition={{ duration: 0.6, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ scale: 0.98 }}
-                    className="group cursor-pointer"
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="mb-16"
                   >
-                    <div className="relative overflow-hidden mb-6 aspect-video rounded-lg">
-                      <ImageCarousel images={images} alt={projectName} />
-                    </div>
-                    <div className="flex justify-between items-end border-b border-gray-200 pb-4 group-hover:border-black transition-colors">
-                      <div>
-                        <h3 className="text-2xl font-bold mb-1">{projectName}</h3>
-                        {location && (
-                          <p className="text-sm text-gray-400 uppercase tracking-wide">{location}</p>
-                        )}
-                      </div>
-                      <ArrowUpRight className="w-6 h-6 text-gray-500 group-hover:text-black transition-colors" />
-                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">{category.name.toUpperCase()}</h2>
+                    <div className="h-1 w-20 bg-black mt-6"></div>
                   </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    {categoryProjects.map((item, index) => {
+                      const projectName = item.external_content?.projectName || item.title || '';
+                      const clientName = item.external_content?.clientName || '';
+                      const location = item.location || '';
+                      const images = item.images || [];
+                      const hasInternalContent = item.internal_content_id && item.internal_content;
+                      const layout = item.layout || "landscape";
+                      const aspectClass = layout === "landscape" 
+                        ? "aspect-[16/9]" 
+                        : layout === "portrait"
+                        ? "aspect-[4/5]"
+                        : "aspect-video";
+                      
+                      return (
+                        <motion.div 
+                          key={item.id}
+                          initial={{ opacity: 0, y: 50 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-50px" }}
+                          transition={{ duration: 0.6, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                          whileHover={{ scale: 0.98 }}
+                          className={`group ${hasInternalContent ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                          onClick={() => {
+                            if (hasInternalContent && item.internal_content?.file_name) {
+                              const fileNameWithoutExt = item.internal_content.file_name.replace('.jsx', '');
+                              navigate(`/projects/${fileNameWithoutExt}`);
+                            }
+                          }}
+                        >
+                          <div className={`relative overflow-hidden mb-6 ${aspectClass} rounded-lg`}>
+                            <ImageCarousel images={images} alt={projectName} />
+                          </div>
+                          <div className="flex justify-between items-end border-b border-gray-200 pb-4 group-hover:border-black transition-colors">
+                            <div>
+                              <h3 className="text-2xl font-bold mb-1">{projectName}</h3>
+                              {clientName && (
+                                <p className="text-sm text-gray-600 mb-1">{clientName}</p>
+                              )}
+                              {location && (
+                                <p className="text-sm text-gray-400 uppercase tracking-wide">{location}</p>
+                              )}
+                            </div>
+                            {hasInternalContent && (
+                              <ArrowUpRight className="w-6 h-6 text-gray-500 group-hover:text-black transition-colors" />
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            );
+          }
 
-      {/* --- 4. PROJECT INSIGHTS --- */}
-      {insights.length > 0 && (
-        <section className="py-20 px-6 md:px-20 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <SectionTitle title="Project Insights" subtitle="Stories Behind The Scenes" />
-            
-            <div className="grid grid-cols-1 gap-16">
-              {insights.map((item, index) => {
-                const projectName = item.external_content?.projectName || item.title || '';
-                const shortDescription = item.external_content?.shortDescription || '';
-                const tag = item.external_content?.tag || '';
-                const date = item.year || '';
-                const images = item.images || [];
-                
-                return (
-                  <motion.div 
-                    key={item.id}
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ duration: 0.6, delay: index * 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ y: -5 }}
-                    className="flex flex-col md:flex-row gap-10 items-center group cursor-pointer"
-                  >
-                    <div className="w-full md:w-5/12 overflow-hidden rounded-xl aspect-[3/2] shadow-md">
-                      <ImageCarousel images={images} alt={projectName} />
-                    </div>
-                    <div className="w-full md:w-7/12">
-                      {(tag || date) && (
-                        <div className="flex items-center gap-4 mb-4 text-xs font-bold uppercase tracking-widest text-gray-400">
-                          {tag && <span className="text-orange-500">{tag}</span>}
-                          {tag && date && <span>•</span>}
-                          {date && <span>{date}</span>}
-                        </div>
-                      )}
-                      <h3 className="text-3xl font-bold mb-4 group-hover:text-orange-600 transition-colors leading-tight">
-                        {projectName}
-                      </h3>
-                      {shortDescription && (
-                        <p className="text-gray-600 text-lg leading-relaxed mb-8 border-l-4 border-gray-200 pl-4 group-hover:border-orange-500 transition-colors">
-                          {shortDescription}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-black group-hover:gap-4 transition-all">
-                        Read Full Story <ArrowRight size={16} />
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+          // Grid 3 columns (EXHIBITION/EVENTS style)
+          if (displayType === 'grid-3') {
+            return (
+              <section key={category.id} className={`py-20 px-6 md:px-20 ${bgColor}`}>
+                <div className="max-w-7xl mx-auto">
+                  <SectionTitle title={category.name} subtitle="" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {categoryProjects.map((item, index) => (
+                      <ProjectCard 
+                        key={item.id} 
+                        project={item} 
+                        layout={item.layout || "portrait"}
+                        index={index} 
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          // Grid 1 column (PROJECT INSIGHTS style)
+          if (displayType === 'grid-1') {
+            return (
+              <section key={category.id} className={`py-20 px-6 md:px-20 ${bgColor}`}>
+                <div className="max-w-7xl mx-auto">
+                  <SectionTitle title={category.name} subtitle="" />
+                  
+                  <div className="grid grid-cols-1 gap-16">
+                    {categoryProjects.map((item, index) => {
+                      const projectName = item.external_content?.projectName || item.title || '';
+                      const clientName = item.external_content?.clientName || '';
+                      const shortDescription = item.external_content?.shortDescription || '';
+                      const tag = item.external_content?.tag || '';
+                      const date = item.year || '';
+                      const images = item.images || [];
+                      const hasInternalContent = item.internal_content_id && item.internal_content;
+                      const layout = item.layout || "landscape";
+                      const aspectClass = layout === "landscape" 
+                        ? "aspect-[16/9]" 
+                        : layout === "portrait"
+                        ? "aspect-[4/5]"
+                        : "aspect-[3/2]";
+                      
+                      return (
+                        <motion.div 
+                          key={item.id}
+                          initial={{ opacity: 0, y: 50 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-50px" }}
+                          transition={{ duration: 0.6, delay: index * 0.2, ease: [0.22, 1, 0.36, 1] }}
+                          whileHover={{ y: -5 }}
+                          className={`flex flex-col md:flex-row gap-10 items-center group ${hasInternalContent ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                          onClick={() => {
+                            if (hasInternalContent && item.internal_content?.file_name) {
+                              const fileNameWithoutExt = item.internal_content.file_name.replace('.jsx', '');
+                              navigate(`/projects/${fileNameWithoutExt}`);
+                            }
+                          }}
+                        >
+                          <div className={`w-full md:w-5/12 overflow-hidden rounded-xl ${aspectClass} shadow-md`}>
+                            <ImageCarousel images={images} alt={projectName} />
+                          </div>
+                          <div className="w-full md:w-7/12">
+                            {(tag || date) && (
+                              <div className="flex items-center gap-4 mb-4 text-xs font-bold uppercase tracking-widest text-gray-400">
+                                {tag && <span className="text-orange-500">{tag}</span>}
+                                {tag && date && <span>•</span>}
+                                {date && <span>{date}</span>}
+                              </div>
+                            )}
+                            <h3 className={`text-3xl font-bold mb-2 transition-colors leading-tight ${hasInternalContent ? 'group-hover:text-orange-600' : ''}`}>
+                              {projectName}
+                            </h3>
+                            {clientName && (
+                              <p className="text-lg text-gray-600 mb-4">
+                                {clientName}
+                              </p>
+                            )}
+                            {shortDescription && (
+                              <p className="text-gray-600 text-lg leading-relaxed mb-8 border-l-4 border-gray-200 pl-4 group-hover:border-orange-500 transition-colors">
+                                {shortDescription}
+                              </p>
+                            )}
+                            {hasInternalContent && (
+                              <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-black group-hover:gap-4 transition-all">
+                                Read Full Story <ArrowRight size={16} />
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+            );
+          }
+
+          return null;
+        })}
+
 
       {/* --- FOOTER --- */}
       <footer className="py-20 px-6 md:px-20 bg-white border-t border-gray-100">

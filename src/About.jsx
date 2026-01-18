@@ -28,9 +28,9 @@ export default function About() {
         <Link 
           to="/" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
-          className="text-2xl font-black tracking-tighter cursor-pointer z-50"
+          className="flex items-center cursor-pointer z-50"
         >
-          PROHUB.
+          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
         </Link>
         <div 
           className="md:hidden cursor-pointer z-50"
