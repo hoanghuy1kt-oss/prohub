@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, History, FolderKanban, Download, LogOut, Users, Image } from 'lucide-react';
+import { Mail, History, FolderKanban, Download, LogOut, Users, Image, FileCode, Tags, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ContactEditor from '../components/admin/ContactEditor';
 import HistoryEditor from '../components/admin/HistoryEditor';
 import ProjectsEditor from '../components/admin/ProjectsEditor';
+import CategoriesEditor from '../components/admin/CategoriesEditor';
 import DownloadProfileEditor from '../components/admin/DownloadProfileEditor';
 import TrustedPartnersEditor from '../components/admin/TrustedPartnersEditor';
 import AboutImagesEditor from '../components/admin/AboutImagesEditor';
+import InternalContentList from './admin/InternalContent/InternalContentList';
+import ImageUploader from '../components/admin/ImageUploader';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -34,7 +37,10 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'contact', label: 'Contact Info', icon: Mail },
     { id: 'history', label: 'Our History', icon: History },
+    { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'projects', label: 'Projects', icon: FolderKanban },
+    { id: 'internal-content', label: 'Internal Content', icon: FileCode },
+    { id: 'image-uploader', label: 'Upload Ảnh', icon: Upload },
     { id: 'partners', label: 'Trusted Partners', icon: Users },
     { id: 'about-images', label: 'About Images', icon: Image },
     { id: 'download', label: 'Download Profile', icon: Download },
@@ -81,7 +87,10 @@ export default function AdminDashboard() {
         >
           {activeTab === 'contact' && <ContactEditor />}
           {activeTab === 'history' && <HistoryEditor />}
+          {activeTab === 'categories' && <CategoriesEditor />}
           {activeTab === 'projects' && <ProjectsEditor />}
+          {activeTab === 'internal-content' && <InternalContentList />}
+          {activeTab === 'image-uploader' && <ImageUploader />}
           {activeTab === 'partners' && <TrustedPartnersEditor />}
           {activeTab === 'about-images' && <AboutImagesEditor />}
           {activeTab === 'download' && <DownloadProfileEditor />}

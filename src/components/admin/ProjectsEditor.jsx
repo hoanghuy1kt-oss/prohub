@@ -723,61 +723,7 @@ export default function ProjectsEditor() {
                   </label>
                 </div>
 
-                {/* 9. Featured for Home Page (SELECTED WORKS) */}
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedProject.is_featured || false}
-                      onChange={(e) => {
-                        const isChecked = e.target.checked;
-                        
-                        // Kiểm tra nếu đang check và đã có 4 projects featured
-                        if (isChecked) {
-                          const featuredCount = projects.filter(
-                            p => p.is_featured && p.id !== selectedProject.id
-                          ).length;
-                          
-                          if (featuredCount >= 4) {
-                            alert('Đã đạt tối đa 4 projects cho SELECTED WORKS. Vui lòng bỏ chọn một project khác trước.');
-                            return;
-                          }
-                          
-                          // Tự động gán home_order
-                          const nextOrder = featuredCount + 1;
-                          setSelectedProject({
-                            ...selectedProject,
-                            is_featured: true,
-                            home_order: nextOrder
-                          });
-                        } else {
-                          // Uncheck: xóa featured và home_order
-                          setSelectedProject({
-                            ...selectedProject,
-                            is_featured: false,
-                            home_order: null
-                          });
-                        }
-                      }}
-                      className="w-5 h-5 rounded border-gray-300 mt-1"
-                    />
-                    <div className="flex-1">
-                      <span className="block text-sm font-medium mb-1">
-                        Hiển thị ở SELECTED WORKS (Home Page)
-                      </span>
-                      <span className="text-xs text-gray-500 block">
-                        Tối đa 4 projects ({projects.filter(p => p.is_featured).length}/4 đã chọn)
-                      </span>
-                      {selectedProject.is_featured && selectedProject.home_order && (
-                        <span className="text-xs text-orange-600 font-medium block mt-1">
-                          Thứ tự hiển thị: {selectedProject.home_order}
-                        </span>
-                      )}
-                    </div>
-                  </label>
-                </div>
-
-                {/* 10. Internal Content (JSON) */}
+                {/* 9. Internal Content (JSON) */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Internal Content (JSON)</label>
                   <textarea

@@ -401,9 +401,9 @@ export default function ProhubWebsiteV11() {
                          <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="mt-12 pl-0 md:pl-16 border-l-0 md:border-l-2 border-orange-500 relative">
                             <p className="text-xl font-bold uppercase tracking-widest text-gray-400 mb-4">Seamlessly bridging the gap</p>
                             <div className="flex flex-col md:flex-row items-baseline gap-6 text-5xl md:text-7xl font-black relative z-20">
-                               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-purple-600 inline-block pb-4">Design</span>
+                               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F39700] to-purple-600 inline-block pb-4">Design</span>
                                <span className="text-2xl font-serif italic font-normal text-gray-400 px-4">to</span>
-                               <span className="stroke-text text-black">Production</span>
+                               <span className="text-black inline-block pb-4">Production</span>
                             </div>
                          </motion.div>
 

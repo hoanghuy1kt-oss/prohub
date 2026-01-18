@@ -35,9 +35,9 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
                   <p className="text-xl font-bold uppercase tracking-widest text-gray-400 mb-4">Seamlessly bridging the gap</p>
                   
                   <div className="relative z-20 flex flex-col md:flex-row items-baseline gap-6 text-5xl md:text-7xl font-black">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-purple-600 inline-block pb-4">Design</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F39700] to-purple-600 inline-block pb-4">Design</span>
                     <span className="text-2xl font-serif italic font-normal text-gray-400 px-4">to</span>
-                    <span className="stroke-text text-black">Production</span>
+                    <span className="text-black inline-block pb-4">Production</span>
                   </div>
                   
                   <div className="relative z-10 mt-16 flex flex-wrap gap-6 text-lg font-bold tracking-wide text-gray-600">
