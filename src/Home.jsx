@@ -20,57 +20,49 @@ const hubs = [
     id: "01",
     title: "Production Hub",
     icon: Box,
-    desc: "1000m² factory facility delivering precision fit-outs for showrooms, stages, and booths.",
-    color: "text-orange-500"
+    desc: "Ha Noi: 1000m2, Ho Chi Minh: 2000m2 factory facility delivering precision fit-outs for showrooms, stages, and booths.",
+    color: "text-orange-500",
+    categorySlug: "interior"
   },
   {
     id: "02",
     title: "Event & Activation",
     icon: Lightbulb,
     desc: "End-to-end event management: Concept to execution for product launches and corporate galas.",
-    color: "text-blue-600"
+    color: "text-blue-600",
+    categorySlug: "events"
   },
   {
     id: "03",
     title: "Exhibition",
     icon: Users,
     desc: "Creative and award-winning booth designs for domestic and international trade shows.",
-    color: "text-purple-600"
+    color: "text-purple-600",
+    categorySlug: "exhibition"
   },
   {
     id: "04",
     title: "Interior Design",
     icon: Layout,
     desc: "Transforming offices, retail stores, and commercial spaces into immersive brand experiences.",
-    color: "text-green-600"
+    color: "text-green-600",
+    categorySlug: "interior"
   },
   {
     id: "05",
     title: "Design Studio",
     icon: PenTool,
     desc: "Creative 2D/3D visualization and detailed technical drawings meeting international standards.",
-    color: "text-pink-600"
+    color: "text-pink-600",
+    categorySlug: "design-hub"
   },
   {
     id: "06",
     title: "Project Management",
     icon: Ruler,
     desc: "Professional management ensuring strict control over timeline, quality, and budget.",
-    color: "text-indigo-500"
-  },
-  {
-    id: "07",
-    title: "Digital Marketing",
-    icon: Monitor,
-    desc: "Integrated digital solutions closely associated with event campaigns and branding strategies.",
-    color: "text-cyan-500"
-  },
-  {
-    id: "08",
-    title: "Branding",
-    icon: Megaphone,
-    desc: "Strategic consulting to build consistent, high-value brand identities and market positioning.",
-    color: "text-yellow-500"
+    color: "text-indigo-500",
+    categorySlug: "project-insights"
   }
 ];
 
@@ -200,13 +192,13 @@ export default function ProhubWebsiteV11() {
       )}
 
       {/* --- NAVIGATION --- */}
-      <nav className="fixed top-0 left-0 w-full z-50 px-6 py-6 flex justify-between items-center bg-white/80 backdrop-blur-md transition-all duration-300">
+      <nav className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md transition-all duration-300">
         <Link 
           to="/" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
           className="flex items-center cursor-pointer z-50"
         >
-          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
+          <img src="/logo.svg" alt="PRO-HUB" className="h-14 w-auto" />
         </Link>
         <div 
             className="md:hidden cursor-pointer z-50"
@@ -346,7 +338,7 @@ export default function ProhubWebsiteV11() {
              transition={{ delay: 0.8, duration: 0.8 }}
              className="text-xl md:text-3xl font-light text-gray-500 max-w-2xl mx-auto"
            >
-             Welcome to <span className="font-bold text-black">PROHUB VIETNAM</span>
+             Welcome to <span className="font-bold text-black">PRO-HUB VIETNAM</span>
            </motion.p>
            
            <motion.div 
@@ -452,25 +444,31 @@ export default function ProhubWebsiteV11() {
                </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                {hubs.map((hub, index) => (
-                  <motion.div 
+                  <Link
                      key={index}
-                     initial={{ opacity: 0, y: 30 }}
-                     whileInView={{ opacity: 1, y: 0 }}
-                     viewport={{ once: true }}
-                     transition={{ delay: index * 0.1 }}
-                     whileHover={{ y: -10 }}
-                     className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-orange-100 transition-all duration-300 group cursor-pointer"
+                     to={`/projects#${hub.categorySlug}`}
+                     onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
+                     className="h-full"
                   >
-                     <div className={`mb-6 p-3 rounded-xl bg-gray-50 w-fit group-hover:bg-black group-hover:text-white transition-colors duration-300`}>
-                        <hub.icon size={28} className={`${hub.color} group-hover:text-white transition-colors`} />
-                     </div>
-                     <h3 className="text-xl font-bold mb-3 group-hover:text-orange-600 transition-colors">{hub.title}</h3>
-                     <p className="text-sm text-gray-500 leading-relaxed">
-                        {hub.desc}
-                     </p>
-                  </motion.div>
+                     <motion.div 
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                        whileHover={{ y: -10 }}
+                        className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-orange-100 transition-all duration-300 group cursor-pointer h-full flex flex-col"
+                     >
+                        <div className={`mb-6 p-3 rounded-xl bg-gray-50 w-fit group-hover:bg-black group-hover:text-white transition-colors duration-300`}>
+                           <hub.icon size={28} className={`${hub.color} group-hover:text-white transition-colors`} />
+                        </div>
+                        <h3 className="text-xl font-bold mb-3 group-hover:text-orange-600 transition-colors">{hub.title}</h3>
+                        <p className="text-sm text-gray-500 leading-relaxed flex-grow">
+                           {hub.desc}
+                        </p>
+                     </motion.div>
+                  </Link>
                ))}
             </div>
          </div>
@@ -479,8 +477,8 @@ export default function ProhubWebsiteV11() {
       {/* --- PROJECTS: ASYMMETRIC GALLERY --- */}
       <section id="projects" className="py-32 px-6 md:px-10 bg-black text-white">
          <div className="max-w-[1800px] mx-auto">
-             <div className="flex justify-between items-end mb-24 px-4">
-                <h2 className="text-6xl md:text-8xl font-black tracking-tighter">
+             <div className="flex justify-between items-end mb-16 px-4">
+                <h2 className="text-5xl md:text-6xl font-black tracking-tight">
                    SELECTED <br/> WORKS
                 </h2>
                 <Link 
@@ -552,7 +550,7 @@ export default function ProhubWebsiteV11() {
       {/* --- CLIENTS --- */}
       <section className="py-20 bg-white overflow-hidden">
          <div className="max-w-7xl mx-auto px-6 text-center">
-            <p className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-12">Trusted Partners</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-12">OUR CLIENTS</p>
             <div className="relative w-full overflow-hidden">
                {/* Marquee Container */}
                <motion.div
@@ -578,42 +576,32 @@ export default function ProhubWebsiteV11() {
                       {/* First Set */}
                       <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
                          {clientLogos.map((client, index) => (
-                            <motion.div 
-                              key={`first-${client.id || index}`} 
-                              className="h-12 flex items-center flex-shrink-0"
-                              whileHover={{ y: -5 }}
-                              transition={{ duration: 0.2 }}
-                            >
+                            <div key={`first-${client.id || index}`} className="h-12 flex items-center flex-shrink-0">
                                {client.logo_url ? (
                                   <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
                                ) : (
                                   <span className="font-bold text-xl">{client.name}</span>
                                )}
-                            </motion.div>
+                            </div>
                          ))}
                       </div>
                       {/* Duplicate Set for Seamless Loop */}
                       <div className="flex items-center gap-12 md:gap-20 flex-shrink-0">
                          {clientLogos.map((client, index) => (
-                            <motion.div 
-                              key={`second-${client.id || index}`} 
-                              className="h-12 flex items-center flex-shrink-0"
-                              whileHover={{ y: -5 }}
-                              transition={{ duration: 0.2 }}
-                            >
+                            <div key={`second-${client.id || index}`} className="h-12 flex items-center flex-shrink-0">
                                {client.logo_url ? (
                                   <img src={client.logo_url} alt={client.name} className="h-full w-auto object-contain" />
                                ) : (
                                   <span className="font-bold text-xl">{client.name}</span>
                                )}
-                            </motion.div>
+                            </div>
                          ))}
                       </div>
                     </>
                   ) : (
                     <div className="text-center py-8 text-gray-400">
-                      <p>Chưa có Trusted Partners</p>
-                      <p className="text-sm mt-2">Vui lòng thêm trong Admin → Trusted Partners</p>
+                      <p>Chưa có OUR CLIENTS</p>
+                      <p className="text-sm mt-2">Vui lòng thêm trong Admin → OUR CLIENTS</p>
                     </div>
                   )}
                </motion.div>
@@ -624,9 +612,9 @@ export default function ProhubWebsiteV11() {
       {/* --- FOOTER --- */}
       <footer id="contact" className="py-20 px-6 md:px-20 bg-white border-t border-gray-100">
          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
-            {/* Phần 1: PROHUB + Download */}
+            {/* Phần 1: PRO-HUB + Download */}
             <div>
-               <h2 className="text-5xl font-black tracking-tighter mb-8">PROHUB.</h2>
+               <img src="/logo.svg" alt="PRO-HUB" className="h-14 w-auto mb-8" />
                <div className="flex flex-col gap-4">
                   {profiles.en ? (
                     <a 
@@ -743,7 +731,7 @@ export default function ProhubWebsiteV11() {
             </div>
          </div>
          <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-gray-100 text-xs font-bold uppercase tracking-widest text-gray-400">
-            <span>© 2026 PROHUB Vietnam</span>
+            <span>© 2026 PRO-HUB Vietnam</span>
          </div>
       </footer>
     </div>

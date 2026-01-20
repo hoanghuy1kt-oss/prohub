@@ -229,7 +229,7 @@ export default function ProjectsEditor() {
     });
   };
 
-  const handleImageUpload = async (file, projectId) => {
+  const handleImageUpload = async (file, projectId, currentProjectState = null) => {
     try {
       // Validate file size (3MB)
       const maxSize = 3 * 1024 * 1024;
@@ -316,14 +316,23 @@ export default function ProjectsEditor() {
       }
       
       // Nếu là project thật (có ID hợp lệ), update database
-      // Lấy images hiện tại từ database thay vì từ state để tránh race condition
-      const { data: currentProject } = await supabase
-        .from('projects')
-        .select('images')
-        .eq('id', projectId)
-        .single();
-      
-      const currentImages = currentProject?.images || [];
+      // Dùng currentProjectState nếu được truyền vào (khi upload nhiều file), nếu không thì dùng selectedProject hoặc query từ database
+      let currentImages = [];
+      if (currentProjectState && currentProjectState.id === projectId) {
+        // Dùng state được truyền vào để tránh race condition khi upload nhiều file
+        currentImages = currentProjectState.images || [];
+      } else if (selectedProject && selectedProject.id === projectId) {
+        // Dùng state hiện tại của selectedProject
+        currentImages = selectedProject.images || [];
+      } else {
+        // Nếu không đang edit, query từ database
+        const { data: currentProject } = await supabase
+          .from('projects')
+          .select('images')
+          .eq('id', projectId)
+          .single();
+        currentImages = currentProject?.images || [];
+      }
       
       if (currentImages.length >= MAX_IMAGES) {
         alert(`Đã đạt tối đa ${MAX_IMAGES} hình ảnh`);
@@ -343,19 +352,20 @@ export default function ProjectsEditor() {
         return null;
       }
       
-      // Query lại project từ database để có dữ liệu mới nhất
-      const { data: updatedProjectData } = await supabase
-        .from('projects')
-        .select('*, project_categories(*), internal_content(*)')
-        .eq('id', projectId)
-        .single();
+      // Update state ngay lập tức để UI phản ánh thay đổi
+      // Chỉ update nếu không có currentProjectState được truyền vào (tức là upload đơn lẻ)
+      // Nếu có currentProjectState, việc update state sẽ được xử lý ở nơi gọi hàm
+      if (!currentProjectState && selectedProject && selectedProject.id === projectId) {
+        setSelectedProject({...selectedProject, images: updatedImages});
+      }
       
-      // Reload projects list
-      await loadProjects();
-      
-      // Update selectedProject nếu đang chọn project này
-      if (selectedProject && selectedProject.id === projectId && updatedProjectData) {
-        setSelectedProject(updatedProjectData);
+      // Update trong projects list state (chỉ khi không có currentProjectState)
+      if (!currentProjectState) {
+        setProjects(prevProjects => prevProjects.map(p => 
+          p.id === projectId 
+            ? {...p, images: updatedImages}
+            : p
+        ));
       }
       
       return publicUrl;
@@ -955,9 +965,34 @@ export default function ProjectsEditor() {
                         const filesToUpload = files.slice(0, remainingSlots);
                         
                         // Upload files tuần tự (sequential) để tránh race condition
+                        // Track images hiện tại trong biến local để đảm bảo mỗi lần upload có state mới nhất
+                        let currentImages = [...(selectedProject.images || [])];
+                        let currentProjectState = {...selectedProject, images: currentImages};
+                        
                         for (const file of filesToUpload) {
-                          await handleImageUpload(file, selectedProject.id);
-                          // selectedProject đã được update trong handleImageUpload
+                          if (currentImages.length >= MAX_IMAGES) {
+                            alert(`Đã đạt tối đa ${MAX_IMAGES} hình ảnh`);
+                            break;
+                          }
+                          
+                          // Upload với currentProjectState hiện tại
+                          const uploadedUrl = await handleImageUpload(file, selectedProject.id, currentProjectState);
+                          
+                          // Nếu upload thành công, cập nhật currentImages và currentProjectState
+                          if (uploadedUrl) {
+                            currentImages = [...currentImages, uploadedUrl];
+                            currentProjectState = {...currentProjectState, images: currentImages};
+                            
+                            // Update selectedProject state ngay lập tức để UI cập nhật
+                            setSelectedProject(currentProjectState);
+                            
+                            // Update projects list state
+                            setProjects(prevProjects => prevProjects.map(p => 
+                              p.id === selectedProject.id 
+                                ? {...p, images: currentImages}
+                                : p
+                            ));
+                          }
                         }
                         
                         // Reset input để có thể chọn lại file

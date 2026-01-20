@@ -299,7 +299,7 @@ export default function ProjectDetail() {
             className="flex items-center gap-2 cursor-pointer z-50"
           >
             <ArrowLeft size={20} />
-            <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
+            <img src="/logo.svg" alt="PRO-HUB" className="h-12 w-auto" />
           </Link>
         </nav>
         <div className="text-center max-w-md mx-auto px-6">
@@ -373,7 +373,7 @@ export default function ProjectDetail() {
             className="flex items-center gap-2 cursor-pointer z-50"
           >
             <ArrowLeft size={20} />
-            <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
+            <img src="/logo.svg" alt="PRO-HUB" className="h-12 w-auto" />
           </Link>
       </nav>
 

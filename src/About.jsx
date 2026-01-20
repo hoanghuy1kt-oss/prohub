@@ -30,7 +30,7 @@ export default function About() {
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
           className="flex items-center cursor-pointer z-50"
         >
-          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
+          <img src="/logo.svg" alt="PRO-HUB" className="h-12 w-auto" />
         </Link>
         <div 
           className="md:hidden cursor-pointer z-50"
@@ -159,8 +159,8 @@ export default function About() {
       <footer id="contact" className="py-12 px-6 md:px-20 bg-white border-t border-gray-100">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
-            <h2 className="text-2xl font-black tracking-tighter mb-2">PROHUB.</h2>
-            <p className="text-xs text-gray-400 uppercase tracking-widest">© 2026 PROHUB Vietnam. All rights reserved.</p>
+            <img src="/logo.svg" alt="PRO-HUB" className="h-10 md:h-12 w-auto mb-2 mx-auto md:mx-0" />
+            <p className="text-xs text-gray-400 uppercase tracking-widest">© 2026 PRO-HUB Vietnam. All rights reserved.</p>
           </div>
           
           <div className="flex flex-col md:flex-row gap-6 text-center md:text-right items-center">

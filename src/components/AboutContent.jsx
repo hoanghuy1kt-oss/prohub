@@ -257,7 +257,6 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
       <section className="py-20 px-6 md:px-20 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-sm font-medium text-gray-500 mb-2">TRUSTED BY INDUSTRY LEADERS</p>
             <h3 className="text-5xl md:text-6xl font-bold uppercase tracking-tight mb-4">OUR CLIENTS</h3>
             <div className="w-20 h-1 bg-black mx-auto"></div>
           </div>
@@ -274,9 +273,21 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
                   key={partner.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ 
+                    y: -5,
+                    transition: {
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25
+                    }
+                  }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="flex items-center justify-center h-16 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+                  transition={{ 
+                    duration: 0.4, 
+                    delay: index * 0.05,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                  className="flex items-center justify-center h-16 cursor-pointer"
                 >
                   {partner.logo_url ? (
                     <img 
@@ -292,8 +303,8 @@ export default function AboutContent({ showWhoWeAre = true, scrollToId = 'histor
             </div>
           ) : (
             <div className="text-center py-12 text-gray-400">
-              <p>Chưa có Trusted Partners</p>
-              <p className="text-sm mt-2">Vui lòng thêm trong Admin → Trusted Partners</p>
+              <p>Chưa có OUR CLIENTS</p>
+              <p className="text-sm mt-2">Vui lòng thêm trong Admin → OUR CLIENTS</p>
             </div>
           )}
 

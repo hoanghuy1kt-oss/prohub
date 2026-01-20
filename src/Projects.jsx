@@ -175,6 +175,25 @@ export default function Projects() {
   const { getProjectsByCategory, categories, loading } = useProjects();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Scroll to section when hash is present in URL
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      setTimeout(() => {
+        const element = document.getElementById(hash);
+        if (element) {
+          const offset = 80; // Account for fixed header
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - offset;
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 300);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -197,7 +216,7 @@ export default function Projects() {
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
           className="flex items-center cursor-pointer z-50"
         >
-          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
+          <img src="/logo.svg" alt="PRO-HUB" className="h-12 w-auto" />
         </Link>
         <div 
           className="md:hidden cursor-pointer z-50"
@@ -299,7 +318,7 @@ export default function Projects() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[12vw] md:text-[10vw] font-black tracking-tighter leading-none mb-6"
+            className="text-5xl md:text-6xl font-black tracking-tight leading-tight mb-4"
           >
             WORK.
           </motion.h1>
@@ -335,7 +354,7 @@ export default function Projects() {
           // Grid 2 columns (INTERIOR/DESIGN HUB style)
           if (displayType === 'grid-2') {
             return (
-              <section key={category.id} className={`py-20 px-6 md:px-20 ${bgColor}`}>
+              <section key={category.id} id={category.slug} className={`py-20 px-6 md:px-20 ${bgColor}`}>
                 <div className="max-w-7xl mx-auto">
                   <motion.div 
                     initial={{ opacity: 0, y: 30 }}
@@ -407,7 +426,7 @@ export default function Projects() {
           // Grid 3 columns (EXHIBITION/EVENTS style)
           if (displayType === 'grid-3') {
             return (
-              <section key={category.id} className={`py-20 px-6 md:px-20 ${bgColor}`}>
+              <section key={category.id} id={category.slug} className={`py-20 px-6 md:px-20 ${bgColor}`}>
                 <div className="max-w-7xl mx-auto">
                   <SectionTitle title={category.name} subtitle="" />
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -428,7 +447,7 @@ export default function Projects() {
           // Grid 1 column (PROJECT INSIGHTS style)
           if (displayType === 'grid-1') {
             return (
-              <section key={category.id} className={`py-20 px-6 md:px-20 ${bgColor}`}>
+              <section key={category.id} id={category.slug} className={`py-20 px-6 md:px-20 ${bgColor}`}>
                 <div className="max-w-7xl mx-auto">
                   <SectionTitle title={category.name} subtitle="" />
                   

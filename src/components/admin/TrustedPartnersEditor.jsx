@@ -199,7 +199,7 @@ export default function TrustedPartnersEditor() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Quản lý Trusted Partners</h2>
+        <h2 className="text-2xl font-bold">Quản lý OUR CLIENTS</h2>
         {saved && (
           <div className="flex items-center gap-2 text-green-600">
             <CheckCircle size={20} />

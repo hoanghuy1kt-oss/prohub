@@ -41,7 +41,7 @@ export default function AdminDashboard() {
     { id: 'projects', label: 'Projects', icon: FolderKanban },
     { id: 'internal-content', label: 'Internal Content', icon: FileCode },
     { id: 'image-uploader', label: 'Upload Ảnh', icon: Upload },
-    { id: 'partners', label: 'Trusted Partners', icon: Users },
+    { id: 'partners', label: 'OUR CLIENTS', icon: Users },
     { id: 'about-images', label: 'About Images', icon: Image },
     { id: 'download', label: 'Download Profile', icon: Download },
   ];

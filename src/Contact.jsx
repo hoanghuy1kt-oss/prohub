@@ -61,7 +61,7 @@ export default function Contact() {
           onClick={() => window.scrollTo({ top: 0, behavior: 'instant' })}
           className="flex items-center cursor-pointer z-50"
         >
-          <img src="/logo.svg" alt="PROHUB" className="h-12 w-auto" />
+          <img src="/logo.svg" alt="PRO-HUB" className="h-12 w-auto" />
         </Link>
         <div 
             className="md:hidden cursor-pointer z-50"
@@ -162,11 +162,11 @@ export default function Contact() {
          <div className="max-w-[1600px] mx-auto w-full">
             
             {/* Header Title */}
-            <div className="mb-12 md:mb-16">
-               <h1 className="text-[6vw] md:text-[5vw] leading-[0.9] font-black tracking-tighter mb-2">
+            <div className="mb-8 md:mb-10">
+               <h1 className="text-5xl md:text-6xl leading-tight font-black tracking-tight mb-1">
                   <Reveal>LET'S START</Reveal>
                </h1>
-               <h1 className="text-[6vw] md:text-[5vw] leading-[0.9] font-black tracking-tighter text-gray-300">
+               <h1 className="text-5xl md:text-6xl leading-tight font-black tracking-tight text-gray-300">
                   <Reveal delay={0.1}>SOMETHING NEW</Reveal>
                </h1>
             </div>
@@ -269,7 +269,7 @@ export default function Contact() {
             animate={{ x: ["0%", "-50%"] }}
             transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
          >
-            <span>Prohub Vietnam</span>
+            <span>PRO-HUB Vietnam</span>
             <span>—</span>
             <span>Interior</span>
             <span>—</span>
@@ -277,7 +277,7 @@ export default function Contact() {
             <span>—</span>
             <span>Exhibition</span>
             <span>—</span>
-            <span>Prohub Vietnam</span>
+            <span>PRO-HUB Vietnam</span>
             <span>—</span>
             <span>Interior</span>
             <span>—</span>
